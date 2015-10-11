@@ -331,10 +331,11 @@ copy_stack(process_t *dest, process_t *src)
 	// and then how to actually copy the stack.  (Hint: use memcpy.)
 	// We have done one for you.
 
-	uint32_t size = src_stack_top - src_stack_bottom;
 	
 	src_stack_top = PROC1_STACK_ADDR + (PROC_STACK_SIZE*src->p_pid);
 	src_stack_bottom = src->p_registers.reg_esp;
+	uint32_t size = src_stack_top - src_stack_bottom;
+
 	dest_stack_top = PROC1_STACK_ADDR + (PROC_STACK_SIZE*dest->p_pid);
 	dest_stack_bottom = dest_stack_top - size;
 
