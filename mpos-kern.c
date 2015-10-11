@@ -257,7 +257,7 @@ do_fork(process_t *parent)
 	// Finally, return the child's process ID to the parent.
 
 	pid_t id;
-	for (id = 1; i < NPROCS; id++) 
+	for (id = 1; id < NPROCS; id++) 
 	{
 		if (proc_array[id].p_state == P_EMPTY)
 			break;
