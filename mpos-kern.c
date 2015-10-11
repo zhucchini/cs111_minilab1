@@ -265,17 +265,15 @@ do_fork(process_t *parent)
 
 	// the ID is not in the range of the array
 	// i.e. there were no empty processes
-	if (id > NPROCS)
+	if (id >= NPROCS)
 		return -1;
 
-	proc_array[id].p_registers = parent->p_registers;
-	copy_stack(proc_array+id, parent);
-	proc_array[id].p_registers.reg_eax = 0;
-	proc_array[id].p_state = parent->p_state;
+	proc_array[id].p_registers = parent->p_registers; // copy the parent registers
+	copy_stack(proc_array+id, parent);				  // copy the parent stacks
+	proc_array[id].p_registers.reg_eax = 0;			  // return 0 for the child process
+	proc_array[id].p_state = parent->p_state;		  // copy the parent state
 
-	return id;
-
-	return -1;
+	return id;										  // return pid of child process
 }
 
 static void
@@ -284,7 +282,6 @@ copy_stack(process_t *dest, process_t *src)
 	uint32_t src_stack_bottom, src_stack_top;
 	uint32_t dest_stack_bottom, dest_stack_top;
 
-	// YOUR CODE HERE!
 	// This function copies the 'src' process's stack into the 'dest'
 	// process's stack region.  Then it sets 'dest's stack pointer to
 	// correspond to 'src's stack pointer.
