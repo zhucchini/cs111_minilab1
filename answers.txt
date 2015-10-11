@@ -1,10 +1,39 @@
-Name:
-UCLA ID:
+Name: Caroline
+UCLA ID: 204163619
 
 
 -------------------------------------------------------------------------------
 
 Response to Exercise 1:
+Yes! In the INT_SYS_GETPID clause, we save the current pid in the eax register.
+Although schedule() might execute a process that will overwrite the value in the
+eax register later, schedule() does context switching, so that any value that 
+was initially stored in the registers will be restored after it returns.
+
+
+Response to Exercise 2:
+Look for code in do_fork() and copy_stack()
+
+
+Response to Exercise 3:
+I added an extra field in the process_t structure in mpos-kern.h called p_wait,
+which holds the id of a process. This allows every process to have a pid of a 
+process that has called sys_wait() on it. Its initial value is set to be 0, which
+assumes that there are no processes waiting on it.
+
+When sys_wait() is called by a process, its status will be changed to P_BLOCKED 
+and the p_wait field will be updated to the process it's waiting on. A call to
+schedule() will ignore the waiting (blocked) process.
+
+If two processes call sys_wait on the same pid, then only one of the processes
+will be able to wait for it, while the other process will be returned the value
+-1, as per mpos-app.h
+
+
+Response to Exercise 4:
+The reason old, dead processes weren't being cleaned up was because when a process
+was finished and it called sys_exit(), we were setting the process status to
+P_ZOMBIE. After changing it to P_EMPTY, the application count up to 1024.
 
 
 

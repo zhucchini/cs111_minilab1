@@ -5,24 +5,28 @@
 
 // Process state type
 typedef enum procstate {
-	P_EMPTY = 0,			// The process table entry is empty
-					// (i.e. this is not a process)
-	P_RUNNABLE,			// This process is runnable
-	P_BLOCKED,			// This process is blocked
-	P_ZOMBIE			// This process has exited, but no one
-					// has called sys_wait() yet
+	P_EMPTY = 0,				// The process table entry is empty
+								// (i.e. this is not a process)
+	P_RUNNABLE,					// This process is runnable
+	P_BLOCKED,					// This process is blocked
+	P_ZOMBIE					// This process has exited, but no one
+								// has called sys_wait() yet
 } procstate_t;
 
 // Process descriptor type
 typedef struct process {
-	pid_t p_pid;			// Process ID
+	pid_t p_pid;				// Process ID
+	pid_t p_wait;				// The id of the process that is waiting
+								// for one the current process to finish.
+								// If no such process exists, its value
+								// will be 0.
 
 	registers_t p_registers;	// Current process state: registers,
-					// stack location, EIP, etc.
-					// 'registers_t' defined in x86.h
+								// stack location, EIP, etc.
+								// 'registers_t' defined in x86.h
 	procstate_t p_state;		// Process state; see above
-	int p_exit_status;		// Process's exit status (if it has
-					// exited and p_state == P_ZOMBIE)
+	int p_exit_status;			// Process's exit status (if it has
+								// exited and p_state == P_ZOMBIE)
 } process_t;
 
 

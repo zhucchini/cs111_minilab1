@@ -76,6 +76,7 @@ start(void)
 	for (i = 0; i < NPROCS; i++) {
 		proc_array[i].p_pid = i;
 		proc_array[i].p_state = P_EMPTY;
+		proc_array[i].p_wait = 0;
 	}
 
 	// The first process has process ID 1.
@@ -168,8 +169,16 @@ interrupt(registers_t *reg)
 		// before calling the system call.  The %eax REGISTER has
 		// changed by now, but we can read the APPLICATION's setting
 		// for this register out of 'current->p_registers'.
-		current->p_state = P_ZOMBIE;
+		current->p_state = P_EMPTY;
 		current->p_exit_status = current->p_registers.reg_eax;
+
+		if (current->p_wait != 0)
+		{
+			proc_array[current->p_wait].p_registers.reg_eax = current->p_exit_status;
+			proc_array[current->p_wait].p_state = P_RUNNABLE;
+			current->p_wait = 0;
+		}
+
 		schedule();
 
 	case INT_SYS_WAIT: {
@@ -184,12 +193,20 @@ interrupt(registers_t *reg)
 
 		pid_t p = current->p_registers.reg_eax;
 		if (p <= 0 || p >= NPROCS || p == current->p_pid
-		    || proc_array[p].p_state == P_EMPTY)
-			current->p_registers.reg_eax = -1;
+		    || proc_array[p].p_state == P_EMPTY
+		    || proc_array[p].p_wait != 0) 
+			{	// If sys_wait() is called twice on the same PID, then only
+				// one will return the actual exit statu (mpos-app.h)
+				current->p_registers.reg_eax = -1;
+			}
 		else if (proc_array[p].p_state == P_ZOMBIE)
 			current->p_registers.reg_eax = proc_array[p].p_exit_status;
 		else
-			current->p_registers.reg_eax = WAIT_TRYAGAIN;
+			{
+				current->p_registers.reg_eax = WAIT_TRYAGAIN;
+				current->p_state = P_BLOCKED;
+				proc_array[p].p_wait = current->p_pid;
+			}
 		schedule();
 	}
 
@@ -222,7 +239,6 @@ static void copy_stack(process_t *dest, process_t *src);
 static pid_t
 do_fork(process_t *parent)
 {
-	// YOUR CODE HERE!
 	// First, find an empty process descriptor.  If there is no empty
 	//   process descriptor, return -1.  Remember not to use proc_array[0].
 	// Then, initialize that process descriptor as a running process
@@ -239,6 +255,25 @@ do_fork(process_t *parent)
 	//                What should sys_fork() return to the child process?)
 	// You need to set one other process descriptor field as well.
 	// Finally, return the child's process ID to the parent.
+
+	pid_t id;
+	for (id = 1; i < NPROCS; id++) 
+	{
+		if (proc_array[id].p_state == P_EMPTY)
+			break;
+	}
+
+	// the ID is not in the range of the array
+	// i.e. there were no empty processes
+	if (id > NPROCS)
+		return -1;
+
+	proc_array[id].p_registers = parent->p_registers;
+	copy_stack(proc_array+id, parent);
+	proc_array[id].p_registers.reg_eax = 0;
+	proc_array[id].p_state = parent->p_state;
+
+	return id;
 
 	return -1;
 }
@@ -296,14 +331,17 @@ copy_stack(process_t *dest, process_t *src)
 	// and then how to actually copy the stack.  (Hint: use memcpy.)
 	// We have done one for you.
 
-	// YOUR CODE HERE!
-
-	src_stack_top = 0 /* YOUR CODE HERE */;
+	uint32_t size = src_stack_top - src_stack_bottom;
+	
+	src_stack_top = PROC1_STACK_ADDR + (PROC_STACK_SIZE*src->p_pid);
 	src_stack_bottom = src->p_registers.reg_esp;
-	dest_stack_top = 0 /* YOUR CODE HERE */;
-	dest_stack_bottom = 0 /* YOUR CODE HERE: calculate based on the
-				 other variables */;
-	// YOUR CODE HERE: memcpy the stack and set dest->p_registers.reg_esp
+	dest_stack_top = PROC1_STACK_ADDR + (PROC_STACK_SIZE*dest->p_pid);
+	dest_stack_bottom = dest_stack_top - size;
+
+	memcpy((void*) dest_stack_top, (void*) src_stack_top, size);
+	dest->p_registers.reg_esp = dest_stack_bottom;
+
+	return;
 }
 
 
