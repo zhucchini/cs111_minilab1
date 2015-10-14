@@ -6,9 +6,9 @@ UCLA ID: 204163619
 
 Response to Exercise 1:
 Yes! In the INT_SYS_GETPID clause, we save the current pid in the eax register.
-Although schedule() might execute a process that will overwrite the value in the
-eax register later, schedule() does context switching, so that any value that 
-was initially stored in the registers will be restored after it returns.
+Although schedule() might execute a process that will overwrite the value in 
+the eax register later, schedule() does context switching, so that any value 
+that was initially stored in the registers will be restored after it returns.
 
 
 Response to Exercise 2:
@@ -18,10 +18,10 @@ Look for code in do_fork() and copy_stack()
 Response to Exercise 3:
 I added an extra field in the process_t structure in mpos-kern.h called p_wait,
 which holds the id of a process. This allows every process to have a pid of a 
-process that has called sys_wait() on it. Its initial value is set to be 0, which
-assumes that there are no processes waiting on it.
+process that has called sys_wait() on it. Its initial value is set to be 0, 
+which assumes that there are no processes waiting on it.
 
-When sys_wait() is called by a process, its status will be changed to P_BLOCKED 
+When sys_wait() is called by a process, its status will be changed to P_BLOCKED
 and the p_wait field will be updated to the process it's waiting on. A call to
 schedule() will ignore the waiting (blocked) process.
 
@@ -31,14 +31,48 @@ will be able to wait for it, while the other process will be returned the value
 
 
 Response to Exercise 4:
-The reason old, dead processes weren't being cleaned up was because when a process
-was finished and it called sys_exit(), we were setting the process status to
-P_ZOMBIE. After changing it to P_EMPTY, the application count up to 1024.
-
+The reason old, dead processes weren't being cleaned up was because when a 
+process was finished and it called sys_exit(), we were setting the process 
+status to P_ZOMBIE. After changing it to P_EMPTY, the application count up to 
+1024.
 
 
 Anything else you'd like us to know:
+-------------------------------------------------------------------------------
 
 
 
 Extra credit exercises:
+-------------------------------------------------------------------------------
+Response to Exercise 5: 
+The issue that we face essentially results in pointers. When we copy the stack,
+normal variables are copied as intended and as expected. However, when pointer
+values are also stored on the stack, when copying the stack as we do in 
+sys_fork(), the newly created pointer still ends up pointing to the original
+variable from the first process. We can exploit this in miniProcOS, as shown in
+the start function below.
+
+We need to use the volatile keyword because we don't want the compiler to try
+to optimize the ptr pointer. We want ptr to point to the original x in the
+parent process, but the optimizer might attempt to point ptr to the x in the 
+child process.
+
+
+void start (void) {
+    int x = 0;
+    int* volatile ptr = &x;
+
+    pid_t p = sys_fork();
+    if (p == 0) {
+        x++;
+        if (*ptr == 0)
+            *ptr += 1; 
+    }
+    else if (p > 0)
+        sys_wait(p); // assume blocking implementation
+    app_printf("%d", x);
+    sys_exit(0);
+}
+
+
+Response to Exercise 6:
