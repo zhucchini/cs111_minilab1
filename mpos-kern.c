@@ -268,8 +268,8 @@ interrupt(registers_t *reg)
 				if (target->p_wait > 0) 
 					{
 						pid_t temp = target->p_wait;
-						proc_array[temp]->p_state = P_RUNNABLE;
-						proc_array[temp]->p_registers.reg_eax = target->p_exit_status;
+						proc_array[temp].p_state = P_RUNNABLE;
+						proc_array[temp].p_registers.reg_eax = target->p_exit_status;
 						target->p_state = P_EMPTY;	// free completed process
 					}
 

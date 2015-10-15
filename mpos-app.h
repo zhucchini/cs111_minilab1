@@ -179,7 +179,7 @@ sys_newthread(void (*start_function)(void))
 	pid_t retval;
 	asm volatile("int %1\n"
 		     : "=a" (retval)
-		     : "i" (INT_SYS_THREAD),
+		     : "i" (INT_SYS_NEWTHREAD),
 		       "a" (start_function)
 		     : "cc", "memory");
 	return retval;
@@ -197,7 +197,7 @@ sys_newthread(void (*start_function)(void))
  *****************************************************************************/
 
 static inline pid_t
-sys_kill(void (pid_t pid)
+sys_kill (pid_t pid)
 {
 	pid_t retval;
 	asm volatile("int %1\n"
