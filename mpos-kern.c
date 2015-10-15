@@ -214,9 +214,9 @@ interrupt(registers_t *reg)
 	case INT_SYS_NEWTHREAD: {
 		// this creates a new thread process, which shares the same space
 		// as the calling process.
-		void (*start_function)(void) = current->p_registers.reg_eax;
+		int start_function = current->p_registers.reg_eax;
 
-		pid_t offset = 1;
+		int offset = 1;
 		process_t* avail;
 
 		while(1)
