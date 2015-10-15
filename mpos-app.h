@@ -163,6 +163,51 @@ sys_wait(pid_t pid)
 }
 
 
+/*****************************************************************************
+ * sys_newthread(start_function)
+ *
+ *   Creates a new thread process sharing the same address space as the
+ *	 calling process. The thread begins executing in the start_function
+ *
+ *	 Returns the child thread's process ID
+ *
+ *****************************************************************************/
+
+static inline pid_t
+sys_newthread(void (*start_function)(void))
+{
+	pid_t retval;
+	asm volatile("int %1\n"
+		     : "=a" (retval)
+		     : "i" (INT_SYS_THREAD),
+		       "a" (start_function)
+		     : "cc", "memory");
+	return retval;
+}
+
+
+/*****************************************************************************
+ * sys_kill(pid)
+ *
+ *   Forces the process with ID 'pid' to exit
+ *
+ *	 Returns -1 if unsucessful
+ *	 Returns 0 otherwise
+ *
+ *****************************************************************************/
+
+static inline pid_t
+sys_kill(void (pid_t pid)
+{
+	pid_t retval;
+	asm volatile("int %1\n"
+		     : "=a" (retval)
+		     : "i" (INT_SYS_KILL),
+		       "a" (pid)
+		     : "cc", "memory");
+	return retval;
+}
+
 
 /*****************************************************************************
  * app_printf(format, ...)

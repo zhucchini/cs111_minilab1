@@ -76,3 +76,12 @@ void start (void) {
 
 
 Response to Exercise 6:
+mpos.h:17                   defined INT_SYS_THREAD = 53
+mpos-app.h: 166 - 186       defined sys_newthread(pid)
+mpos-kern.c: 214 - 246      defined case INT_SYS_NEWTHREAD
+
+
+Response to Exercise 7:
+mpos.h:18                   defined INT_SYS_KILL = 54
+mpos-app.h: 
+mpos-kern.c: 248 - 285      defined case INT_SYS_KILL

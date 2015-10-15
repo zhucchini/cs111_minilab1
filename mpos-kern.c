@@ -210,6 +210,80 @@ interrupt(registers_t *reg)
 		schedule();
 	}
 
+
+	case INT_SYS_NEWTHREAD:
+		// this creates a new thread process, which shares the same space
+		// as the calling process.
+		int offset = 1;
+		process_t* avail;
+
+		while(1)
+			{
+				if (offset == NPROCS)
+					return -1;
+				
+				avail = &(proc_array[offset]);
+				if (avail->p_state == P_EMPTY)
+					break;
+
+				offset++;
+			}
+
+		// set up process space (same as child process)
+		avail->p_state = P_RUNNABLE;
+		avail->p_waiting = NULL;
+
+		// threads have their own registers, but here are some of the important ones:
+		uint32_t stack_top = PROC1_STACK_ADDR + PROC_STACK_SIZE * avail->p_pid;
+		avail->p_registers.reg_esp = stack_top;			// initializes empty stack
+														// previous stack will not be read
+		avail->p_registers.reg_eax = 0;		// similar to child, return 0 for new thread
+		
+		// previously, this register was directly copied from parent to child
+		// now the new thread will start at a function rather than a process
+		avail->p_registers.reg_eip = (uint32_t) start_function;
+
+		run(avail->p_pid);
+
+	case INT_SYS_KILL:
+		// 'sys_kill' forces a process to exit. This is an error to call sys_ill
+		// on an out-of-range PID or a process that does not exist or is dead.
+
+		pid_t p = current->p_registers.reg_eax;
+
+		if (p <= 0 || p >= NPROCS || p == current->p_pid || 
+			proc_array[p].p_state == P_EMPTY)
+				current->p_registers.reg_eax = -1;		// no process to kill
+		else if (proc_array[p].p_state == P_ZOMBIE) 	// process is already dead
+			current->p_registers.reg_eax = proc_array[p].p_exit_status;
+		else 
+			{
+				// act as if sys_exit has been called
+				process_t* target = &(proc_array[p]);
+				target->p_state = P_ZOMBIE;				// kill the process
+				current->p_registers.reg_eax = target->p_exit_status;
+
+				// wake up any sleeping processes
+				process_t* proc = current->p_waiting;
+				process_t* temp;
+				current->p_waiting = NULL;
+
+				while (proc != NULL) 
+					{
+						if (proc->p_state == P_BLOCKED)
+							{
+								proc->p_state = P_RUNNABLE;
+								proc->p_registers.reg_eax = current->p_exit_status;
+							}
+						temp = proc;
+						proc = proc->p_waiting;
+						temp->p_waiting = NULL;
+						target->p_state = P_EMPTY;
+					}
+			}
+
+		run(current);
+
 	default:
 		while (1)
 			/* do nothing */;
