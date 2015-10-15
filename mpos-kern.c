@@ -214,13 +214,13 @@ interrupt(registers_t *reg)
 	case INT_SYS_NEWTHREAD:
 		// this creates a new thread process, which shares the same space
 		// as the calling process.
-		int offset = 1;
+		uint32_t offset = 1;
 		process_t* avail;
 
 		while(1)
 			{
 				if (offset == NPROCS)
-					return -1;
+					avail->p_registers.reg_eax = -1;
 				
 				avail = &(proc_array[offset]);
 				if (avail->p_state == P_EMPTY)
@@ -231,7 +231,7 @@ interrupt(registers_t *reg)
 
 		// set up process space (same as child process)
 		avail->p_state = P_RUNNABLE;
-		avail->p_waiting = NULL;
+		avail->p_wait = NULL;
 
 		// threads have their own registers, but here are some of the important ones:
 		uint32_t stack_top = PROC1_STACK_ADDR + PROC_STACK_SIZE * avail->p_pid;
@@ -264,9 +264,9 @@ interrupt(registers_t *reg)
 				current->p_registers.reg_eax = target->p_exit_status;
 
 				// wake up any sleeping processes
-				process_t* proc = current->p_waiting;
+				process_t* proc = current->p_wait;
 				process_t* temp;
-				current->p_waiting = NULL;
+				current->p_wait = NULL;
 
 				while (proc != NULL) 
 					{
@@ -276,8 +276,8 @@ interrupt(registers_t *reg)
 								proc->p_registers.reg_eax = current->p_exit_status;
 							}
 						temp = proc;
-						proc = proc->p_waiting;
-						temp->p_waiting = NULL;
+						proc = proc->p_wait;
+						temp->p_wait = NULL;
 						target->p_state = P_EMPTY;
 					}
 			}
