@@ -265,10 +265,11 @@ interrupt(registers_t *reg)
 				target->p_exit_status = -1;
 
 				// wake up any sleeping processes
-				if (target->p_wait != NULL) 
+				if (target->p_wait > 0) 
 					{
-						target->p_waiting->p_state = P_RUNNABLE;
-						target->p_waiting->p_registers.reg_eax = target->p_exit_status;
+						pid_t temp = target->p_wait;
+						proc_array[temp]->p_state = P_RUNNABLE;
+						proc_array[temp]->p_registers.reg_eax = target->p_exit_status;
 						target->p_state = P_EMPTY;	// free completed process
 					}
 
