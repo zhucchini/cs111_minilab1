@@ -211,10 +211,10 @@ interrupt(registers_t *reg)
 	}
 
 
-	case INT_SYS_NEWTHREAD:
+	case INT_SYS_NEWTHREAD: {
 		// this creates a new thread process, which shares the same space
 		// as the calling process.
-		uint32_t offset = 1;
+		pid_t offset = 1;
 		process_t* avail;
 
 		while(1)
@@ -244,8 +244,8 @@ interrupt(registers_t *reg)
 		avail->p_registers.reg_eip = (uint32_t) start_function;
 
 		run(avail->p_pid);
-
-	case INT_SYS_KILL:
+	}
+	case INT_SYS_KILL: {
 		// 'sys_kill' forces a process to exit. This is an error to call sys_ill
 		// on an out-of-range PID or a process that does not exist or is dead.
 
@@ -283,7 +283,7 @@ interrupt(registers_t *reg)
 			}
 
 		run(current);
-
+	}
 	default:
 		while (1)
 			/* do nothing */;
