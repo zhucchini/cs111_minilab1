@@ -233,7 +233,6 @@ interrupt(registers_t *reg)
 
 		// set up process space (same as child process)
 		avail->p_state = P_RUNNABLE;
-		avail->p_wait = NULL;
 
 		// threads have their own registers, but here are some of the important ones:
 		uint32_t stack_top = PROC1_STACK_ADDR + PROC_STACK_SIZE * avail->p_pid;
@@ -245,7 +244,7 @@ interrupt(registers_t *reg)
 		// now the new thread will start at a function rather than a process
 		avail->p_registers.reg_eip = (uint32_t) start_function;
 
-		run(avail->p_pid);
+		run(avail);
 	}
 	case INT_SYS_KILL: {
 		// 'sys_kill' forces a process to exit. This is an error to call sys_ill
@@ -263,25 +262,17 @@ interrupt(registers_t *reg)
 				// act as if sys_exit has been called
 				process_t* target = &(proc_array[p]);
 				target->p_state = P_ZOMBIE;				// kill the process
-				current->p_registers.reg_eax = target->p_exit_status;
+				target->p_exit_status = -1;
 
 				// wake up any sleeping processes
-				process_t* proc = current->p_wait;
-				process_t* temp;
-				current->p_wait = NULL;
-
-				while (proc != NULL) 
+				if (target->p_wait != NULL) 
 					{
-						if (proc->p_state == P_BLOCKED)
-							{
-								proc->p_state = P_RUNNABLE;
-								proc->p_registers.reg_eax = current->p_exit_status;
-							}
-						temp = proc;
-						proc = proc->p_wait;
-						temp->p_wait = NULL;
-						target->p_state = P_EMPTY;
+						target->p_waiting->p_state = P_RUNNABLE;
+						target->p_waiting->p_registers.reg_eax = target->p_exit_status;
+						target->p_state = P_EMPTY;	// free completed process
 					}
+
+				current->p_registers.reg_eax = 0;
 			}
 
 		run(current);
