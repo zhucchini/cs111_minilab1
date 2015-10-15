@@ -76,12 +76,31 @@ void start (void) {
 
 
 Response to Exercise 6:
-mpos.h:17                   defined INT_SYS_THREAD = 53
+This function should be fairly similar to our do_fork() function, because it is
+essentially a "create new process" function except with threads rather than 
+processes. If we want to create a new thread, we can replace do_fork() in the
+interrupt method to sys_newthread(). However, we will still need to:
+    
+    1. Find an empty process.
+    2. Set up the empty process.
+
+The main difference comes in part 2, because the process begins with an empty
+stack. We can't just copy the registers anymore - we need to also consider 
+where the registers need to point. Just like in the do_fork() method, eax
+should be 0 afterwards, but eip should begin at start_function to begin running
+start_function for the thread. To do this, I modified the code in the files as
+shown below.
+
+mpos.h:17                   defined INT_SYS_NEWTHREAD = 53
 mpos-app.h: 166 - 186       defined sys_newthread(pid)
-mpos-kern.c: 214 - 246      defined case INT_SYS_NEWTHREAD
+mpos-kern.c: 213 - 247      defined case INT_SYS_NEWTHREAD
 
 
 Response to Exercise 7:
+This function can be written as a mixture between sys_wait and sys_exit. For
+the most part, it will act as sys_wait, but the final removal of the program 
+should be similar to sys_exit. The code that I modified is shown below.
+
 mpos.h:18                   defined INT_SYS_KILL = 54
 mpos-app.h: 
-mpos-kern.c: 248 - 285      defined case INT_SYS_KILL
+mpos-kern.c: 249 - 280      defined case INT_SYS_KILL
